@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Search</title>
+</head>
+<body>
+<h1>Film Search</h1>
+<form action="/search" method="GET">
+    <input type="text" name="query" placeholder="Enter film title...">
+    <button type="submit">Search</button>
+</form>
+<br>
+<h2>Search Results:</h2>
+<ul>
+    {% for film in films %}
+    <li>{{ film.title }} - Similarity: {{ film.similarity }}</li>
+    {% endfor %}
+</ul>
+</body>
+</html>
