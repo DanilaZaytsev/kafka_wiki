@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics.pairwise import cosine_distances
 from transformers import BertTokenizer, BertModel
 import torch
 import psycopg2
@@ -14,7 +15,6 @@ db_params = {
 
 conn = psycopg2.connect(**db_params)
 print("Connected to the PostgreSQL database")
-
 
 model_name = 'bert-base-multilingual-cased'
 tokenizer = BertTokenizer.from_pretrained(model_name)
@@ -41,7 +41,6 @@ def load_genre_mapping():
         genre_mapping[genre_name] = genre_name
     return genre_mapping
 
-
 cursor = conn.cursor()
 cursor.execute("SELECT COUNT(*) FROM films")
 total_films = cursor.fetchone()[0]
@@ -53,15 +52,18 @@ genre_mapping = load_genre_mapping()
 
 # Обработка данных по батчам
 for offset in range(0, total_films, batch_size):
-    # получаем фильмы батчами
+    # Получаем фильмы батчами
     cursor.execute("SELECT id, plot FROM films ORDER BY id LIMIT %s OFFSET %s", (batch_size, offset))
     films = cursor.fetchall()
 
     # Получение векторов сюжетов с помощью BERT
     plot_embeddings = np.array([encode_text(plot[1]) for plot in films])
 
-    # Приминение кластеризации
-    clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=0.8).fit(plot_embeddings)
+    # Применение косинусной метрики
+    cosine_distance = cosine_distances(plot_embeddings)
+
+    # Применение кластеризации
+    clustering = AgglomerativeClustering(n_clusters=None, linkage="average", distance_threshold=0.2).fit(cosine_distance)
     cluster_labels = clustering.labels_
 
     # Пишем в базу
